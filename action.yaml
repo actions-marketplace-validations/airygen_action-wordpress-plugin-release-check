@@ -23,16 +23,21 @@ runs:
         PLUGIN_FILE: ${{ inputs.plugin_file }}
       run: |
         set -euo pipefail
+
         RELEASE_TAG="${{ github.event.release.tag_name }}"
-        README_FILE=$(ls | grep -i '^readme\.txt$' || true)
-        TAG="${RELEASE_TAG#v}"
+        TAG="${RELEASE_TAG#v}"   # strip leading v if present
+
+        # Default outputs (ensure always set)
         printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
         echo "publish=false" >> "$GITHUB_OUTPUT"
 
+        # Case-insensitive README.txt at repo root
+        README_FILE=$(ls -1 | grep -i -x 'readme.txt' | head -n1 || true)
+        [[ -n "$README_FILE" ]] || { echo "README.txt not found (case-insensitive)"; exit 1; }
+
         if [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          [[ -f "$README_FILE" ]] || { echo "README.txt not found"; exit 1; }
+          [[ -f "$README_FILE" ]] || { echo "README file not found at path: $README_FILE"; exit 1; }
           [[ -f "$PLUGIN_FILE" ]] || { echo "Plugin main file not found: $PLUGIN_FILE"; exit 1; }
-          [[ -n "$README_FILE" ]] || { echo "README.txt not found (case-insensitive)"; exit 1; }
 
           STABLE_TAG=$(sed -nE 's/^Stable tag:[[:space:]]*([^[:space:]]+).*$/\1/p' "$README_FILE" | head -n1)
           [[ -n "$STABLE_TAG" ]] || { echo "Stable tag not found in $README_FILE"; exit 1; }

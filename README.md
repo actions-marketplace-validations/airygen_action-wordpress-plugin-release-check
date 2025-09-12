@@ -61,7 +61,7 @@ jobs:
 
       - name: Validate WP Plugin Version
         id: validate
-        uses: your-org/validate-wp-plugin-version@v1
+        uses: airseo/action-wordpress-plugin-release-check@v1
         with:
           plugin_file: airyseo.php
 
